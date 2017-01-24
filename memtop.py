@@ -1,9 +1,8 @@
 #!/usr/bin/env python
 
+import os
 import psutil
 import sys
-
-pids = psutil.pids()
 
 class MemObject(object):
     def __init__(self):
@@ -11,10 +10,26 @@ class MemObject(object):
         self.mem_usage = None
         self.cmdline = None
 
+    def _linux_get_kernel_thread_name(self):
+        # TODO: Check Parent Pid is equal 2
+        cmd = 'grep Name: /proc/{0}/status'.format(self.pid)
+        data = os.popen(cmd).read()
+        th_name = data.split()[-1]
+        return "[{0}]".format(th_name)
+
+    def get_kernel_thread_name(self):
+        if 'linux' in sys.platform:
+            return self._linux_get_kernel_thread_name()
+        else:
+            return self.cmdline
+
+
 objs = []
 
 
 def main():
+    pids = psutil.pids()
+
     for p in pids:
         process = psutil.Process(pid=p)
         pid = process.pid
@@ -27,7 +42,10 @@ def main():
         mem_obj = MemObject()
         mem_obj.pid = pid
         mem_obj.mem_usage = float(percent)
-        mem_obj.cmdline = cmdline_str
+        if cmdline_str == '':
+            mem_obj.cmdline = mem_obj.get_kernel_thread_name()
+        else:
+            mem_obj.cmdline = cmdline_str
         objs.append(mem_obj)
 
     header = "Process (Pid) | Memory Used (%) | Command (cmdline)"
