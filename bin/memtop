@@ -14,11 +14,14 @@ class MemObject(object):
         self.cmdline = None
 
     def _linux_get_kernel_thread_name(self):
-        # TODO: Check Parent Pid is equal 2
-        cmd = 'grep Name: /proc/{0}/status'.format(self.pid)
-        data = os.popen(cmd).read()
-        th_name = data.split()[-1]
-        return "[{0}]".format(th_name)
+        cmd = "egrep 'Name|PPid' /proc/{0}/status".format(self.pid)
+        with os.popen(cmd, 'r') as fd:
+            data = fd.read()
+        # assume pid of kthreadd is always 2
+        kth_pids = [2, 0]
+        name, ppid = data.split()[1::2]
+        ppid = int(ppid)
+        return "[{0}]".format(name) if ppid in kth_pids else "{0}".format(name)
 
     def get_kernel_thread_name(self):
         if 'linux' in sys.platform:
