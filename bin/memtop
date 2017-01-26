@@ -1,8 +1,11 @@
 #!/usr/bin/env python
 
+import fcntl
 import os
 import psutil
+import struct
 import sys
+import termios
 
 class MemObject(object):
     def __init__(self):
@@ -24,6 +27,15 @@ class MemObject(object):
             return self.cmdline
 
 
+def get_width():
+    width = 80
+    with open(os.ctermid(), 'r') as term_fd:
+        array = struct.pack('HHHH', 0, 0, 0, 0)
+        packed = fcntl.ioctl(term_fd, termios.TIOCGWINSZ, array)
+        height, width, _, _ = struct.unpack('HHHH', packed)
+
+    return width
+
 objs = []
 
 
@@ -37,8 +49,9 @@ def main():
         # https://en.wikipedia.org/wiki/Resident_set_size
         percent = '{0:2.1f}'.format(process.memory_percent(memtype="rss"))
         cmdline_str = ' '.join(process.cmdline())
-        cmdline_str = cmdline_str[:70] + '...' if len(cmdline_str) > 70 \
-                    else cmdline_str
+        term_width = get_width()
+        if len(cmdline_str) > int(.8*term_width):
+            cmdline_str = cmdline_str[0:int(0.8*term_width)-3] + '...'
         mem_obj = MemObject()
         mem_obj.pid = pid
         mem_obj.mem_usage = float(percent)
