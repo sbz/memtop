@@ -7,6 +7,16 @@ import struct
 import sys
 import termios
 
+
+class PsUtilCompat(object):
+    @classmethod
+    def memory_percent(cls, process):
+        if psutil.__version__.startswith('2'):
+            return process.memory_percent()
+        else:
+            return process.memory_percent(memtype="rss")
+
+
 class MemObject(object):
     def __init__(self):
         self.pid = None
@@ -50,25 +60,25 @@ def main():
         pid = process.pid
         # Only Resident Set Size (RSS)
         # https://en.wikipedia.org/wiki/Resident_set_size
-        percent = '{0:2.1f}'.format(process.memory_percent(memtype="rss"))
-        cmdline_str = ' '.join(process.cmdline())
+        percent = '{0:2.1f}'.format(PsUtilCompat.memory_percent(process))
+        cmdline_str = process.cmdline()[0] if len(process.cmdline()) == 1 \
+            else ' '.join(process.cmdline())
         term_width = get_width()
         if len(cmdline_str) > int(.8*term_width):
             cmdline_str = cmdline_str[0:int(0.8*term_width)-3] + '...'
         mem_obj = MemObject()
         mem_obj.pid = pid
         mem_obj.mem_usage = float(percent)
+        mem_obj.cmdline = cmdline_str
         if cmdline_str == '':
             mem_obj.cmdline = mem_obj.get_kernel_thread_name()
-        else:
-            mem_obj.cmdline = cmdline_str
         objs.append(mem_obj)
 
     header = "Process (Pid) | Memory Used (%) | Command (cmdline)"
     print(header)
     print("-"*len(header))
     for m in sorted(objs, key=lambda x: x.mem_usage, reverse=True):
-        print("{0:^14} {1:^16} {2:^20}".format(m.pid, m.mem_usage, m.cmdline))
+        print("{0:^14} {1:^16} {2}".format(m.pid, m.mem_usage, m.cmdline))
 
     return 0
 
