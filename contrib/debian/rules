@@ -1,0 +1,14 @@
+#!/usr/bin/make -f
+#-*- makefile -*-
+#
+#export DH_VERBOSE=1
+
+export PYBUILD_NAME=memtop
+export PYBUILD_INSTALL_ARGS=--install-scripts=/usr/sbin
+
+%:
+	dh $@ --parallel --with=python3 --buildsystem=pybuild
+
+override_dh_auto_clean:
+	echo
+	dh_auto_clean

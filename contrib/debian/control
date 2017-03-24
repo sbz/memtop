@@ -1,0 +1,25 @@
+Source: memtop
+Section: admin
+Priority: optional
+Maintainer: Sofian Brabez <sbz@6dev.net>
+X-Python-Version: >= 3.2
+Build-Depends: 
+  debhelper (>= 9), 
+  dh-python,
+  python3 (>= 3.2),
+  python3-setuptools, 
+  python3-all
+Standards-Version: 3.9.6
+Homepage: https://github.com/sbz/memtop
+Vcs-Git: https://github.com/sbz/memtop.git
+Vcs-Browser: https://github.com/sbz/memtop
+
+Package: memtop
+Architecture: all
+Depends: 
+  ${python3:Depends}, 
+  ${misc:Depends},
+  python3-psutil
+Description: memory top(1) like in Python using Python psutil
+ .
+ WWWW: https://github.com/sbz/memtop
