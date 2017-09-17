@@ -9,12 +9,30 @@ import termios
 
 
 class PsUtilCompat(object):
+    majver = int(psutil.__version__[0])
+
     @classmethod
     def memory_percent(cls, process):
-        if psutil.__version__.startswith('2'):
+        if cls.majver == 0:
+            return process.get_memory_percent()
+        elif cls.majver == 2:
             return process.memory_percent()
         else:
             return process.memory_percent(memtype="rss")
+
+    @classmethod
+    def pids(cls):
+        if cls.majver < 4:
+            return psutil.get_pid_list()
+        else:
+            return psutil.pids()
+
+    @classmethod
+    def cmdline(cls, process):
+        if cls.majver < 3:
+            return process.cmdline
+        else:
+            return process.cmdline()
 
 
 class MemObject(object):
@@ -49,11 +67,10 @@ def get_width():
 
     return width
 
-objs = []
-
 
 def main():
-    pids = psutil.pids()
+    objs = []
+    pids = PsUtilCompat.pids()
 
     for p in pids:
         process = psutil.Process(pid=p)
@@ -61,8 +78,9 @@ def main():
         # Only Resident Set Size (RSS)
         # https://en.wikipedia.org/wiki/Resident_set_size
         percent = '{0:2.1f}'.format(PsUtilCompat.memory_percent(process))
-        cmdline_str = process.cmdline()[0] if len(process.cmdline()) == 1 \
-            else ' '.join(process.cmdline())
+        cmdline = PsUtilCompat.cmdline(process)
+        cmdline_str = cmdline[0] if len(cmdline) == 1 \
+            else ' '.join(cmdline)
         term_width = get_width()
         if len(cmdline_str) > int(.8*term_width):
             cmdline_str = cmdline_str[0:int(0.8*term_width)-3] + '...'
